@@ -1,3 +1,4 @@
+import joblib
 import tensorflow as tf
 import numpy as np
 import pandas as pd
@@ -58,9 +59,9 @@ def split_and_scale_features(X):
 
 train_data, val_data, test_data = group_and_split(data)
 
-X_train_splits = split_and_scale_features(train_data.iloc[:, 1:-1])
-X_val_splits = split_and_scale_features(val_data.iloc[:, 1:-1])
-X_test_splits = split_and_scale_features(test_data.iloc[:, 1:-1])
+X_train = split_and_scale_features(train_data.iloc[:, 1:-1])
+X_val = split_and_scale_features(val_data.iloc[:, 1:-1])
+X_test = split_and_scale_features(test_data.iloc[:, 1:-1])
 
 # 라벨 데이터 분리 및 인코딩
 y_train = train_data['label'].values
@@ -73,6 +74,15 @@ label_encoder = LabelEncoder()
 y_train = label_encoder.fit_transform(y_train)
 y_val = label_encoder.transform(y_val)
 y_test = label_encoder.transform(y_test)
+
+joblib.dump(label_encoder, "label_encoder.pkl")
+
+df_labels = pd.DataFrame({
+    'index': list(range(len(label_encoder.classes_))),
+    'label': label_encoder.classes_
+})
+
+#df_labels.to_csv("label_index1.csv", index=False, encoding='utf-8')
 
 
 
@@ -116,27 +126,45 @@ model.summary()
 
 # 모델 학습
 history = model.fit(
-    X_train_splits, y_train,
-    validation_data=(X_val_splits, y_val),
+    X_train, y_train,
+    validation_data=(X_val, y_val),
     epochs=20,
     batch_size=128,
     verbose=1
 )
 
+model.save("C:/Users/mjson/PycharmProjects/sign-detection/model/sign_dnn_model.h5")
+print("모델 저장")
+
 # 모델 평가
-train_loss, train_acc = model.evaluate(X_train_splits, y_train, verbose=0)
-val_loss, val_acc = model.evaluate(X_val_splits, y_val, verbose=0)
-test_loss, test_acc = model.evaluate(X_test_splits, y_test, verbose=0)
+train_loss, train_acc = model.evaluate(X_train, y_train, verbose=0)
+val_loss, val_acc = model.evaluate(X_val, y_val, verbose=0)
+test_loss, test_acc = model.evaluate(X_test, y_test, verbose=0)
 
 print(f"Train Accuracy: {train_acc:.4f}, Train Loss: {train_loss:.4f}")
 print(f"Validation Accuracy: {val_acc:.4f}, Validation Loss: {val_loss:.4f}")
 print(f"Test Accuracy: {test_acc:.4f}, Test Loss: {test_loss:.4f}")
 
+
+# 랜덤하게 10개 인덱스 선택 (중복 없이)
+random_indices = np.random.choice(len(y_test), size=10, replace=False)
+
+# 예측된 결과
+pred_probs = model.predict(X_test)
+pred_indices = np.argmax(pred_probs, axis=1)
+predicted_labels = label_encoder.inverse_transform(pred_indices)
+true_labels = label_encoder.inverse_transform(y_test)
+
+# 무작위로 뽑은 결과 출력
+for i in random_indices:
+    print(f"[{i}] 실제: {true_labels[i]} | 예측: {predicted_labels[i]}")
+
+
 # 학습 시각화
 plt.figure(figsize=(10, 4))
 plt.subplot(1, 2, 1)
-plt.plot(history.history['accuracy'], label='Train Accuracy')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.plot(history.history['accuracy'], label='Train Acc')
+plt.plot(history.history['val_accuracy'], label='Validation Acc')
 plt.title("Accuracy")
 plt.xlabel("Epoch")
 plt.ylabel("Accuracy")

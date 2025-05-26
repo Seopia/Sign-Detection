@@ -40,7 +40,7 @@ def extract_label(word_id):
                     label_cache[word_id] = name
                     return name
         except Exception as e:
-            print(f"Error reading {json_path}: {str(e)}")
+            print(f"오류 {json_path}: {str(e)}")
 
     # 라벨을 찾지 못한 경우
     return "unknown"
@@ -52,7 +52,7 @@ for index, row in df.iterrows():
         file_name = row['file_name']
         match = re.search(r'WORD(\d+)', file_name)
         if match:
-            word_id = f"WORD{match.group(1).zfill(4)}"
+            word_id = f"WORD{match.group(1).zfill(4)}" #f-string 이걸로 문자열 포맷, zfill로 단어 수 길이 맞춤
             label = extract_label(word_id)
             df.at[index, 'label'] = label
         else:
@@ -63,34 +63,6 @@ for index, row in df.iterrows():
 # CSV 파일로 저장 (라벨을 마지막 열에 추가)
 df.to_csv(output_csv, index=False, encoding='utf-8')
 
-print(f"CSV 파일에 라벨 추가 완료: {output_csv}")
+print(f"라벨 추가 완료: {output_csv}")
 
-
-
-# CSV 파일 경로
-# input_csv = r"C:\4-2\deeplearning\project\aiHub\data\data_labeled.csv"
-# output_csv = r"C:\4-2\deeplearning\project\aiHub\data\data.csv"
-#
-# # CSV 파일 로드
-# df = pd.read_csv(input_csv)
-#
-# # 라벨 열의 중복 단어 수 계산
-# label_counts = Counter(df['label'])
-#
-# # 150개를 초과하는 단어 목록
-# excess_labels = [label for label, count in label_counts.items() if count > 150]
-#
-# print(f"150개를 초과하는 단어 개수: {len(excess_labels)}")
-# print(f"제거할 단어 목록: {excess_labels}")
-#
-# # 150개를 초과하는 단어를 제거하고, 150개인 단어는 유지
-# cleaned_df = df[~df['label'].isin(excess_labels)]
-#
-# # 제거 후 데이터 수 확인
-# print(f"제거 후 데이터 수: {len(cleaned_df)}")
-#
-# # 필터링된 CSV 파일 저장
-# cleaned_df.to_csv(output_csv, index=False, encoding='utf-8-sig')
-#
-# print(f" 완료: {output_csv}")
 
